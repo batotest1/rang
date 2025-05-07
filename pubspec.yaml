@@ -35,12 +35,32 @@ dependencies:
   cupertino_icons: ^1.0.8
   lottie: ^3.3.1
   carousel_slider: ^5.0.0
-  http: ^0.14.0
-  
+  http: ^1.4.0
+  flutter_launcher_icons: "^0.14.3"
+ 
+
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/1.jpg"
+  min_sdk_android: 21
+  web:
+    generate: true
+    image_path: "assets/1.jpg"
+    background_color: "#ffffff"
+    theme_color: "#2196f3"
+  windows:
+    generate: true
+    image_path: "assets/1.jpg"
+    icon_size: 48
+  macos:
+    generate: true
+    image_path: "assets/1.jpg"
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is

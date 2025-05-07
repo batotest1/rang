@@ -137,7 +137,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: Column(
+         child: Column(
           children: [
             const SizedBox(height: 16),
             Padding(
