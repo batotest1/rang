@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:lottie/lottie.dart';
+import 'package:carousel_slider/carousel_slider.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 void main() {
   runApp(const MyApp());
@@ -7,116 +12,387 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+    return const MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: ProfilePage(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+class ProfilePage extends StatefulWidget {
+  const ProfilePage({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<ProfilePage> createState() => _ProfilePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  int _age = 15;
+  final TextEditingController _ageController = TextEditingController();
+  bool _inputHasError = false;
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 3),
+    )..repeat();
   }
 
   @override
+  void dispose() {
+    _controller.dispose();
+    _ageController.dispose();
+    super.dispose();
+  }
+
+  void _showDialog() {
+    setState(() {
+      _inputHasError = false;
+    });
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setStateSB) {
+            return AlertDialog(
+              title: const Text('Yoshni kiriting'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: _ageController,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(2),
+                    ],
+                    decoration: InputDecoration(
+                      hintText: '10 dan 99 gacha son kiriting',
+                      errorText: _inputHasError
+                          ? 'Xato: Iltimos, 2 xonali son kiriting'
+                          : null,
+                      border: OutlineInputBorder(
+                        borderSide: BorderSide(
+                          color: _inputHasError ? Colors.red : Colors.grey,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(
+                          color: _inputHasError ? Colors.red : Colors.blue,
+                          width: 2,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(dialogContext).pop();
+                  },
+                  child: const Text('Bekor qilish'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    int? enteredAge = int.tryParse(_ageController.text);
+                    if (enteredAge == null || enteredAge < 10 || enteredAge > 99) {
+                      setStateSB(() {
+                        _inputHasError = true;
+                      });
+                    } else {
+                      setState(() {
+                        _age = enteredAge;
+                      });
+                      Navigator.of(dialogContext).pop();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Ma’lumot saqlandi'),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                      _ageController.clear();
+                      _inputHasError = false;
+                    }
+                  },
+                  child: const Text('OK'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  final List<String> imagePaths = List.generate(15, (index) => 'assets/${index + 1}.jpg');
+
+  @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
+      backgroundColor: Colors.white,
+      body: SafeArea(
         child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+          children: [
+            const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  IconButton(onPressed: (){
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => CurrencyPage() ));
+                  }, icon:Icon(Icons.attach_money) ),
+                   Text(
+                    'flutter',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue,
+                    ),
+                  ),
+                 GestureDetector(
+                    onTap: _showDialog,
+                    child: SizedBox(
+                      width: 40,
+                      height: 40,
+                      child: Lottie.asset('assets/button.json'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                Column(
+                  children: [
+                    const SizedBox(height: 20),
+                    const Text('HIS AGE', style: TextStyle(color: Colors.grey)),
+                    Text('$_age /100',
+                        style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 10),
+                    const Text('OVERALL', style: TextStyle(color: Colors.grey)),
+                    const SizedBox(height: 10),
+                    const StatRow(icon: Icons.favorite, value: 34, label: 'Energy'),
+                    const StatRow(icon: Icons.visibility, value: 24, label: 'Smart'),
+                    const StatRow(icon: Icons.flash_on, value: 54, label: 'Speed'),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Positioned(
+                      top: 50,
+                      child: Lottie.asset(
+                        'assets/circul1.json',
+                        width: 120,
+                      ),
+                    ),
+                    Positioned(
+                      child: Image.asset(
+                        'assets/1.png',
+                        width: 200,
+                        height: 200,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            const Text('Old memory',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 10),
+            CarouselSlider(
+              options: CarouselOptions(
+                height: 350,
+                enlargeCenterPage: true,
+                autoPlay: true,
+              ),
+              items: imagePaths.map((path) {
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ImagePreviewPage(imagePath: path),
+                      ),
+                    );
+                  },
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(20), // Radius berilgan joy
+                    child: Image.asset(
+                      path,
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                    ),
+                  ),
+                );
+              }).toList(),
             ),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+    );
+  }
+}
+
+class StatRow extends StatelessWidget {
+  final IconData icon;
+  final int value;
+  final String label;
+
+  const StatRow({
+    super.key,
+    required this.icon,
+    required this.value,
+    required this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, color: Colors.red),
+          const SizedBox(width: 10),
+          Text('$value /100',
+              style: const TextStyle(fontSize: 16, color: Colors.black)),
+          const SizedBox(width: 5),
+          Text(label, style: const TextStyle(color: Colors.grey)),
+        ],
+      ),
+    );
+  }
+}
+
+class ImagePreviewPage extends StatelessWidget {
+  final String imagePath;
+
+  const ImagePreviewPage({super.key, required this.imagePath});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Image Viewer"),
+        backgroundColor: Colors.white,
+      ),
+      body: Center(
+        child: Image.asset(
+          imagePath,
+          fit: BoxFit.contain,
+        ),
+      ),
+    );
+  }
+}
+
+
+
+
+class CurrencyPage extends StatefulWidget {
+  const CurrencyPage({super.key});
+
+  @override
+  State<CurrencyPage> createState() => _CurrencyPageState();
+}
+
+class _CurrencyPageState extends State<CurrencyPage> {
+  List<dynamic> currencies = [];
+  String updatedDate = '';
+
+  @override
+  void initState() {
+    super.initState();
+    fetchCurrencies();
+  }
+
+  Future<void> fetchCurrencies() async {
+    final response = await http.get(
+      Uri.parse('https://cbu.uz/uz/arkhiv-kursov-valyut/json/')
+    );
+
+    if (response.statusCode == 200) {
+      setState(() {
+        currencies = jsonDecode(response.body);
+        final now = DateTime.now();
+        updatedDate =
+            "${now.day.toString().padLeft(2, '0')}.${now.month.toString().padLeft(2, '0')}.${now.year}";
+      });
+    } else {
+      throw Exception("Valyutalarni olishda xatolik yuz berdi.");
+    }
+  }
+
+  Widget currencyTile(Map<String, dynamic> currency) {
+    final isPositive = !currency['Diff'].toString().startsWith('-');
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Column(
+        children: [
+          Text(
+            currency['CcyNm_UZ'],
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            "1 ${currency['Ccy']} = ${currency['Rate']} so'm",
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 16),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            isPositive ? "+${currency['Diff']}" : currency['Diff'],
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 16,
+              color: isPositive ? Colors.green : Colors.red,
+            ),
+          ),
+          const Divider(thickness: 1),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xfffdf7ff),
+      appBar: AppBar(
+        backgroundColor: Colors.blue,
+        title: const Text("Valyuta kurslari", style: TextStyle(color: Colors.white)),
+        centerTitle: true,
+      ),
+      body: currencies.isEmpty
+          ? const Center(child: CircularProgressIndicator())
+          : Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: ListView(
+                children: [
+                  const SizedBox(height: 16),
+                  Text(
+                    "Yangilangan sana: $updatedDate",
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 16, color: Colors.grey),
+                  ),
+                  const SizedBox(height: 16),
+                  ...currencies.map((currency) => currencyTile(currency)).toList(),
+                ],
+              ),
+            ),
     );
   }
 }
